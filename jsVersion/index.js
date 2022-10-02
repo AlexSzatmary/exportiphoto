@@ -77,7 +77,7 @@ class IPhotoExporter {
     this.library = path;
     this.output = out;
     if (!fs.existsSync(this.output)) {
-      this.mkdirSync(this.output);
+      fs.mkdirSync(this.output);
     }
     this.xml = this._getXML();
     this.albums = this.xml["List of Albums"];
