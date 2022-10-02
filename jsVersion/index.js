@@ -20,59 +20,81 @@ class IPhotoExporter {
     }
   }
   async handleExport(folderName, album) {
-    const images = album.keyList.map(k => this.images[k])
-    const libraryName = this.library.split('/').pop()
-    const promises = images.map(i => {
-        let _promises = []
+    const images = album.KeyList.map((k) => this.images[k]);
+    const libraryOriginalPath = this.xml["libraryName"];
+    console.log(`starting ${album.AlbumName}`);
+    try {
+      for (let i of images) {
+        let _promises = [];
         if (i.OriginalPath) {
-            const relativePath = i.OriginalPath.split(libraryName)[1]
-            const inPath = path.join(this.library, relativePath)
-            const outPath = path.join(folderName, i.Caption + '_original', path.extname(relativePath))
-            _promises.push(fs.copyFile(inPath, outPath))
+          const relativePath = i.OriginalPath.substring(
+            libraryOriginalPath.length
+          );
+          const inPath = path.join(this.library, relativePath);
+          const outPath = path.join(
+            folderName,
+            i.Caption + "_original" + path.extname(relativePath)
+          );
+          _promises.push(fs.promises.copyFile(inPath, outPath));
         }
-        const relativePath = i.ImagePath.split(libraryName)[1]
-        const inPath = path.join(this.library, relativePath)
-        const outPath = path.join(folderName, i.Caption, path.extname(relativePath))
-        _promises.push(fs.copyFile(inPath, outPath))
-        return Promise.all(_promises)
-    })
-    return Promise.all(promises)
+        const relativePath = i.ImagePath.substring(libraryOriginalPath.length);
+        const inPath = path.join(this.library, relativePath);
+        const outPath = path.join(
+          folderName,
+          i.Caption + path.extname(relativePath)
+        );
+        _promises.push(fs.promises.copyFile(inPath, outPath));
+        await Promise.all(_promises);
+        this.count += 1;
+        console.log(`${this.count}/${this.total} left`);
+      }
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
+    console.log(`finishing ${album.AlbumName}`);
   }
   async startExport() {
-    this.albums.forEach((f) => {
+    for (let a of this.albums) {
       try {
         const folderName = path.join(
           this.output,
-          f.AlbumName.replace(new RegExp("/", "gi"), "-")
+          a.AlbumName.replace(new RegExp("/", "gi"), "-")
         );
         if (!fs.existsSync(folderName)) {
-          if (f["Album Type"] === "Regular") {
-            this.promises.push(this.handleExport(folderName, f));
-          }
           fs.mkdirSync(folderName);
         }
+        if (a["Album Type"] === "Regular") {
+          await this.handleExport(folderName, a);
+        }
       } catch (e) {
-        console.error(`error on ${JSON.stringify(f, null, 2)}`);
+        console.error(`error on ${JSON.stringify(a, null, 2)}`);
         console.error(e);
       }
-    });
-    return Promise.all(this.promises)
+    }
   }
   constructor({ path, out }) {
     this.library = path;
     this.output = out;
+    if (!fs.existsSync(this.output)) {
+      this.mkdirSync(this.output);
+    }
     this.xml = this._getXML();
     this.albums = this.xml["List of Albums"];
-    this.count = this.albums.filter(f["Album Type"] === "Regular").reduce((r, i) => r + i.PhotoCount, 0)
+    this.total = this.albums
+      .filter((f) => f["Album Type"] === "Regular")
+      .reduce((r, i) => r + i.PhotoCount, 0);
+    this.count = 0;
     this.images = this.xml["Master Image List"];
-    this.promises = [];
-    this.startExport();
     //console.log(JSON.stringify(this.images, null, 2));
   }
 }
 
-function main() {
+async function main() {
+  console.log("initializing");
   const exporter = new IPhotoExporter({ path: argv.path, out: argv.out });
+  console.log("initializing done");
+  await exporter.startExport();
 }
 
-main();
+await main();
