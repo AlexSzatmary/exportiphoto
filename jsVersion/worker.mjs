@@ -19,7 +19,7 @@ export default async function handleExport({
           const relativePath = i.OriginalPath.substring(archivePath.length);
           const inPath = path.join(libraryPath, relativePath);
           const outPath = path.normalize(
-            path.join(folderName, i.Caption + path.extname(relativePath))
+            path.join(folderName, i.Caption.replace(new RegExp("/", "gi"), "-") + path.extname(relativePath))
           );
           _promises.push(fs.promises.copyFile(inPath, outPath));
         }
@@ -28,7 +28,7 @@ export default async function handleExport({
         const outPath = path.normalize(
           path.join(
             folderName,
-            i.Caption +
+            i.Caption.replace(new RegExp("/", "gi"), "-") +
               (modified ? "_modified" : "") +
               path.extname(relativePath)
           )
