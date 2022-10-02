@@ -68,7 +68,8 @@ class iPhotoLibrary(object):
         self.import_missing = import_missing
         self.ignore_time_delta = ignore_time_delta
         self.date_delimiter = date_delimiter
-        self.originals=originals
+        self.originals=originals != False
+        self.all_versions = originals == "both"
         self.import_albums = []
 
         if import_from_date:
@@ -320,7 +321,7 @@ tell application "iPhoto"
 end tell
 ' ''' % escaped_dir)
 
-    def copyImage(self, imageId, folderName, folderDate):
+    def copyImage(self, imageId, folderName, folderDate, modified = False):
         """
         Copy an image from the library to a folder in the dest_dir. The
         name of the folder is based on folderName and folderDate; if
@@ -347,7 +348,7 @@ end tell
         #except for some corrupted iPhoto libraries, where some images only have OriginalPath.
         #Trying to satisfy both conditions with this nested logic.
         if self.originals:
-            if "OriginalPath" in image:
+            if "OriginalPath" in image and modified == False:
                 mFilePath = image["OriginalPath"]
             else:
                 mFilePath = image["ImagePath"]
@@ -356,7 +357,16 @@ end tell
                 mFilePath = image["OriginalPath"]
             else:
                 mFilePath = image["ImagePath"]
+        
         basename = os.path.basename(mFilePath)
+
+        if (self.all_versions):
+            if (modified == False):
+                self.copyImage(self, imageId, folderName, folderDate, True)
+            else:
+                basename += '_modified'
+        
+        
 
         # Deconflict ouput filenames
         tFilePath = os.path.join(folderName, basename)
