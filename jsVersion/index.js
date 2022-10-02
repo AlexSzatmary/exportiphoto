@@ -24,7 +24,7 @@ class IPhotoExporter {
       console.error(e);
     }
   }
-  async handleExport({ folderName, album }) {
+  async handleExport(folderName, album) {
     console.log(`starting ${album.AlbumName}`);
     const images = album.KeyList.map((k) => xml.images[k]);
     return this.pool
