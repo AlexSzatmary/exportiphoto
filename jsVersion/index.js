@@ -26,7 +26,7 @@ class IPhotoExporter {
   }
   async handleExport(folderName, album) {
     console.log(`starting ${album.AlbumName}`);
-    const images = album.KeyList.map((k) => this.xml.images[k]);
+    const images = album.KeyList.map((k) => this.images[k]);
     return this.pool
       .run({
         folderName,
@@ -40,27 +40,30 @@ class IPhotoExporter {
         console.log(`finishing ${album.AlbumName}`);
       });
   }
-  startExport(type = "Regular") {
+  async startExport(type = "Regular") {
     this.count = 0;
     const albums = this.albums.filter((f) => f["Album Type"] === type);
     this.total = albums.reduce((r, i) => r + i.PhotoCount, 0);
     let promises = [];
-    for (let a of albums) {
-      try {
-        const folderName = path.join(
-          this.output,
-          a.AlbumName.replace(new RegExp("/", "gi"), "-")
-        );
-        if (!fs.existsSync(folderName)) {
-          fs.mkdirSync(folderName);
+    const chunks = chunk(albums, 10);
+    for (let c of chunks) {
+      for (let a of c) {
+        try {
+          const folderName = path.join(
+            this.output,
+            a.AlbumName.replace(new RegExp("/", "gi"), "-")
+          );
+          if (!fs.existsSync(folderName)) {
+            fs.mkdirSync(folderName);
+          }
+          promises.push(this.handleExport(folderName, a));
+        } catch (e) {
+          console.error(`error on ${JSON.stringify(a, null, 2)}`);
+          console.error(e);
         }
-        promises.push(this.handleExport(folderName, a));
-      } catch (e) {
-        console.error(`error on ${JSON.stringify(a, null, 2)}`);
-        console.error(e);
       }
+      await Promise.all(promises)
     }
-    return Promise.all(promises);
   }
   constructor({ fp, out }) {
     this.library = fp;
