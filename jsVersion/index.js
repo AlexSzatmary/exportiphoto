@@ -25,7 +25,7 @@ class IPhotoExporter {
     }
   }
   async handleExport({ folderName, album }) {
-    console.log(`starting ${a.AlbumName}`);
+    console.log(`starting ${album.AlbumName}`);
     const images = album.KeyList.map((k) => xml.images[k]);
     return this.pool
       .run({
@@ -37,7 +37,7 @@ class IPhotoExporter {
       .then((res) => {
         this.count += images.length;
         console.log(`${(this.count / this.total) * 100}%`);
-        console.log(`finishing ${a.AlbumName}`);
+        console.log(`finishing ${album.AlbumName}`);
       });
   }
   startExport(type = "Regular") {
