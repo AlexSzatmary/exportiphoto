@@ -12,6 +12,7 @@
   "dependencies": {
     "escape-string-regexp": "^5.0.0",
     "lodash": "^4.17.21",
+    "piscina": "^3.2.0",
     "plist": "^3.0.6",
     "yargs": "^17.6.0"
   }
