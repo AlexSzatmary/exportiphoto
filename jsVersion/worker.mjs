@@ -25,7 +25,9 @@ export default async function handleExport({
           )
         );
         if (fs.existsSync(inPath)) {
+          const stats = fs.statSync(inPath);
           _promises.push(fs.promises.copyFile(inPath, outPath, fs.constants.COPYFILE_FICLONE));
+          _promises.push(fs.utimes(outPath, stats.atime, stats.mtime))
         }
       }
       const relativePath = i.ImagePath.substring(archivePath.length);
@@ -33,8 +35,8 @@ export default async function handleExport({
       const outPath = path.normalize(
         path.join(
           folderName,
+          (modified ? "_modified_" : "") +
           i.Caption.replace(new RegExp("/", "gi"), "-") +
-            (modified ? "_modified" : "") +
             path.extname(relativePath)
         )
       );

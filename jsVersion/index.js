@@ -40,27 +40,71 @@ class IPhotoExporter {
         console.log(`finishing ${album.AlbumName}`);
       });
   }
-  async startExport(type = "Regular") {
+  async startExport() {
     this.count = 0;
-    const albums = this.albums.filter((f) => f["Album Type"] === type);
-    this.total = albums.reduce((r, i) => r + i.PhotoCount, 0);
-    let promises = [];
-    for (let a of albums) {
-      try {
-        const folderName = path.join(
-          this.output,
-          a.AlbumName.replace(new RegExp("/", "gi"), "-")
-        );
-        if (!fs.existsSync(folderName)) {
-          fs.mkdirSync(folderName);
-        }
-        promises.push(this.handleExport(folderName, a));
-      } catch (e) {
-        console.error(`error on ${JSON.stringify(a, null, 2)}`);
-        console.error(e);
+    let images = Object.keys(this.images).map(k => ({ ...this.images[k], id: k }))
+    this.total = images.length;
+    images = images.map(i => {
+      let keywords = this.photosMetadata[i.id]
+      if (keywords) {
+        keywords.push('old-iphoto')
+        delete this.photosMetadata[i.id]
+      } else {
+        keywords = this.noMatchKeywords
+      }
+      return {
+        filename: i.Caption.trim(),
+        path: (i.OriginalPath || i.ImagePath).replace('/Users/Laurent/Pictures/iPhoto Library.photolibrary', this.library),
+        keywords
+      }
+    })
+    console.log(images)
+    // for (let i of images) {
+    //   let path =
+    //   i.OriginalPath = 
+    //   i.keywords = 
+    //   if (id) {
+    //     console.log(id)
+    //     this.count++;
+    //     console.log(`${(this.count / this.total) * 100}% left`);
+    //   } else {
+    //     console.log(i)
+    //   }
+      
+    }
+    // const albums = this.albums.filter((f) => f["Album Type"] === type);
+    // this.total = albums.reduce((r, i) => r + i.PhotoCount, 0);
+    // let promises = [];
+    // for (let a of albums) {
+    //   try {
+    //     const folderName = path.join(
+    //       this.output,
+    //       a.AlbumName.replace(new RegExp("/", "gi"), "-")
+    //     );
+    //     if (!fs.existsSync(folderName)) {
+    //       fs.mkdirSync(folderName);
+    //     }
+    //     promises.push(this.handleExport(folderName, a));
+    //   } catch (e) {
+    //     console.error(`error on ${JSON.stringify(a, null, 2)}`);
+    //     console.error(e);
+    //   }
+    // }
+    // return Promise.all(promises)
+  getKeywords() {
+    for (let a of this.albums) {
+      const keyword = a.AlbumName.trim()
+        .replace(/-/g, " ")
+        .replace(/\s+/g, "-")
+        .toLowerCase();
+      this.keywordsList = [...this.keywordsList, keyword];
+      for (let key of a.KeyList) {
+        this.photosMetadata[key] = [
+          ...(this.photosMetadata[key] || []),
+          keyword,
+        ];
       }
     }
-    return Promise.all(promises)
   }
   constructor({ fp, out }) {
     this.library = fp;
@@ -72,8 +116,18 @@ class IPhotoExporter {
       fs.mkdirSync(this.output);
     }
     this.xml = this._getXML();
-    this.albums = this.xml["List of Albums"];
+    this.albums = this.xml["List of Albums"].filter(
+      (a) =>
+        a["Album Type"] !== "Event" &&
+        a["Album Type"] !== "Special Month" &&
+        a["Album Type"] !== "99" &&
+        a["Album Type"] !== "Flagged"
+    );
     this.images = this.xml["Master Image List"];
+    this.photosMetadata = {};
+    this.noMatchKeywords = ["old-iphoto", "à-trier"];
+    this.keywordsList = ["old-iphoto"];
+    this.getKeywords();
   }
 }
 
@@ -81,7 +135,7 @@ async function main() {
   console.log("initializing");
   const exporter = new IPhotoExporter({ fp: argv.path, out: argv.out });
   console.log("initializing done");
-  await exporter.startExport(argv.type);
+  await exporter.startExport();
 }
 
 await main();
