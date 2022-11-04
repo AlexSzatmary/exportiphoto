@@ -1,56 +1,24 @@
 import chunk from "lodash/chunk.js";
 import path from "path";
 import fs from "fs";
+import { execSync } from 'child_process'
 
 export default async function handleExport({
-  folderName,
-  libraryPath,
-  archivePath,
-  images,
+  dir,
+  image
 }) {
-  const chunks = chunk(images, 30);
-  for (let c of chunks) {
-    let _promises = [];
-    for (let i of c) {
-      let modified = false;
-      if (i.OriginalPath) {
-        modified = true;
-        const relativePath = i.OriginalPath.substring(archivePath.length);
-        const inPath = path.normalize(path.join(libraryPath, relativePath));
-        const outPath = path.normalize(
-          path.join(
-            folderName,
-            i.Caption.replace(new RegExp("/", "gi"), "-") +
-              path.extname(relativePath)
-          )
-        );
-        if (fs.existsSync(inPath)) {
-          const stats = fs.statSync(inPath);
-          _promises.push(fs.promises.copyFile(inPath, outPath, fs.constants.COPYFILE_FICLONE));
-          _promises.push(fs.utimes(outPath, stats.atime, stats.mtime))
-        }
-      }
-      const relativePath = i.ImagePath.substring(archivePath.length);
-      const inPath = path.normalize(path.join(libraryPath, relativePath));
-      const outPath = path.normalize(
-        path.join(
-          folderName,
-          (modified ? "_modified_" : "") +
-          i.Caption.replace(new RegExp("/", "gi"), "-") +
-            path.extname(relativePath)
-        )
-      );
-      if (fs.existsSync(inPath)) {
-        _promises.push(fs.promises.copyFile(inPath, outPath, fs.constants.COPYFILE_FICLONE));
-      }
-    }
-    if (_promises.length) {
-        try {
-            await Promise.all(_promises);
-        } catch (e) {
-            console.error(e)
-        }
-      _promises = [];
-    }
+  let outPath = path.join(dir, path.basename(image.path))
+  if (fs.existsSync(outPath)) {
+    outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`)
+  }
+  const isPng = (/.png/gi).match(outPath.path)
+  if (isPng) {
+    console.log('TODO')
+  } else {
+    fs.renameSync(image.path, outPath)
+  }
+  execSync('exiftool -overwrite_original -keywords=')
+  for (keyword of image.keyword) {
+    execSync(`exiftool -overwrite_original -keywords+="${keyword}"`)
   }
 }
