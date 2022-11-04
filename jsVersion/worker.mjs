@@ -8,7 +8,7 @@ export default async function handleExport({
   dir,
   image
 }) {
-  let outPath = path.normalize(path.join(dir, path.basename(image.filename)))
+  let outPath = path.normalize(path.join(dir, path.basename(image.filename) + path.extname(image.path)))
   let oldOutPath = path.normalize(path.join(dir, path.basename(image.path)))
   const isPng = PNG_REGEX.test(outPath)
   if (isPng) {
