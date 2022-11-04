@@ -15,7 +15,7 @@ export default async function handleExport({
   }
   if (fs.existsSync(image.path)) {
     if (fs.existsSync(outPath)) {
-      outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
+      outPath = path.normalize(outPath.replace(path.extname(outPath), `-${image.id}${path.extname(outPath)}`))
     }
     if (isPng) {
       sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
