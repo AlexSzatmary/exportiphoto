@@ -1,4 +1,3 @@
-import chunk from "lodash/chunk.js";
 import path from "path";
 import fs from "fs";
 import { execSync } from 'child_process'
@@ -8,11 +7,12 @@ export default async function handleExport({
   dir,
   image
 }) {
-  let outPath = path.join(dir, path.basename(image.path))
+  console.log(dir, image)
+  let outPath = path.normalize(path.join(dir, path.basename(image.path)))
   if (fs.existsSync(outPath)) {
-    outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`)
+    outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
   }
-  const isPng = (/.png/gi).match(outPath.path)
+  const isPng = (/.png/gi).match(outPath)
   if (isPng) {
     sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
   } else {

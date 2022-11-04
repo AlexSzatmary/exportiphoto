@@ -3,7 +3,7 @@ import { hideBin } from "yargs/helpers";
 import plist from "plist";
 import fs from "fs";
 import path from "path";
-import { uniqBy } from "lodash";
+import uniqBy from "lodash/uniqBy.js";
 import { Piscina } from "piscina";
 import { fileURLToPath } from "url";
 
@@ -47,7 +47,7 @@ class IPhotoExporter {
     let count = 0;
     let total = images.length;
     let promises = [];
-    for (let i in images) {
+    for (let i of images) {
       const promise = this.pool
         .run({
           dir: this.output,
@@ -98,7 +98,7 @@ class IPhotoExporter {
     this.noMatchKeywords = ["old-iphoto", "à-trier"];
     this.keywordsList = ["old-iphoto", "à-trier"];
     this.getKeywords();
-    fs.writeFileSync(`${this.output}/KEYWORD_LIST.txt`, uniqBy(this.keywordsList).join(',\n').sort((a, b) => a.localeCompare(b)))
+    fs.writeFileSync(`${this.output}/KEYWORD_LIST.txt`, uniqBy(this.keywordsList).sort((a, b) => a.localeCompare(b)).join(',\n'))
   }
 }
 
@@ -106,7 +106,7 @@ async function main() {
   console.log("initializing");
   const exporter = new IPhotoExporter({ fp: argv.path, out: argv.out });
   console.log("initializing done");
-  //await exporter.startExport();
+  await exporter.startExport();
 }
 
 await main();
