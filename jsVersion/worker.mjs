@@ -8,10 +8,12 @@ export default async function handleExport({
   dir,
   image
 }) {
-  let outPath = path.normalize(path.join(dir, path.basename(image.path)))
+  let outPath = path.normalize(path.join(dir, path.basename(image.filename)))
+  let oldOutPath = path.normalize(path.join(dir, path.basename(image.path)))
   const isPng = PNG_REGEX.test(outPath)
   if (isPng) {
     outPath = outPath.replace(/\.png/g, '.jpg')
+    oldOutPath = oldOutPath.replace(/\.png/g, '.jpg')
   }
   if (fs.existsSync(image.path)) {
     const stats = fs.statSync(image.path)
@@ -23,6 +25,11 @@ export default async function handleExport({
     } else {
       fs.renameSync(image.path, outPath)
     }
+    fs.utimesSync(outPath, stats.atime, stats.mtime)
+  }
+  if (fs.existsSync(oldOutPath)) {
+    const stats = fs.statSync(oldOutPath)
+    fs.renameSync(oldOutPath, outPath)
     fs.utimesSync(outPath, stats.atime, stats.mtime)
   }
   execSync(`exiftool -overwrite_original -keywords= ${outPath}`)
