@@ -25,7 +25,7 @@ export default async function handleExport({
   }
   execSync(`exiftool -overwrite_original -keywords= ${outPath}`)
   for (const keyword of image.keywords) {
-    execSync(`exiftool -overwrite_original -keywords+="${keyword} ${outPath}"`)
+    execSync(`exiftool -overwrite_original -keywords+="${keyword}" ${outPath}`)
   }
   console.log(`done for ${outPath}`)
 }
