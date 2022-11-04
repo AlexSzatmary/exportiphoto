@@ -12,9 +12,9 @@ export default async function handleExport({
   if (fs.existsSync(outPath)) {
     outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
   }
-  const isPng = PNG_REGEX.match(outPath)
+  const isPng = PNG_REGEX.test(outPath)
   if (isPng) {
-    sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
+    sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath.replace(/\.png/g, '.jpg'))
   } else {
     fs.renameSync(image.path, outPath)
   }

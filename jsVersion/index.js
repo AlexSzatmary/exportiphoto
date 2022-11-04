@@ -36,7 +36,7 @@ class IPhotoExporter {
         keywords = this.noMatchKeywords;
       }
       return {
-        filename: i.Caption.trim(),
+        filename: i.Caption.trim().toLowerCase(),
         path: (i.OriginalPath || i.ImagePath).replace(
           "/Users/Laurent/Pictures/iPhoto Library.photolibrary",
           this.library
