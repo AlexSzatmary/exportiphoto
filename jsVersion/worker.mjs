@@ -13,7 +13,7 @@ function applyKeywords(path, keywords) {
   );
 }
 
-function getAlternatePaths(dir, filename) {
+function getAlternatePaths(dir, image) {
   const old = path.normalize(
     path.join(
       dir,
@@ -40,7 +40,8 @@ function getAlternatePaths(dir, filename) {
       path.extname(image.path)
     )
   );
-  return [old, old_id, old_path, old_path_und];
+  let res = [old, old_id, old_path, old_path_und]
+  res = [ ...res, ...res.map(e => e.replace(PNG_REGEX, '.jpg')) ]
 }
 
 function getPath(dir, image) {
@@ -73,7 +74,7 @@ function handleSource(dir, image) {
   if (fs.existsSync(image.path)) {
     return handleFileMigration(image.path, output);
   }
-  const alternatePaths = getAlternatePaths(dir, filename);
+  const alternatePaths = getAlternatePaths(dir, image);
   const _oldPath = alternatePaths.find((ap) => fs.existsSync(ap));
   if (_oldPath) {
     return handleFileMigration(_oldPath, output);
