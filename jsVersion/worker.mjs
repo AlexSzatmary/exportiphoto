@@ -3,6 +3,7 @@ import fs from "fs";
 import { execSync } from 'child_process'
 import sharp from 'sharp'
 
+const PNG_REGEX = new RegExp('.png', 'gi')
 export default async function handleExport({
   dir,
   image
@@ -11,7 +12,7 @@ export default async function handleExport({
   if (fs.existsSync(outPath)) {
     outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
   }
-  const isPng = (/.png/gi).match(outPath)
+  const isPng = ().match(outPath)
   if (isPng) {
     sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
   } else {
