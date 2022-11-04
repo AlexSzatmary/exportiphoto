@@ -33,7 +33,7 @@ class IPhotoExporter {
         keywords.push("old-iphoto");
         delete this.photosMetadata[i.id];
       } else {
-        keywords = this.noMatchKeywords;
+        keywords = [ ...this.noMatchKeywords ];
       }
       return {
         filename: i.Caption.trim().toLowerCase(),
@@ -54,8 +54,8 @@ class IPhotoExporter {
           image: i,
         })
         .then(() => {
-          this.count++;
-          console.log(`${(this.count / this.total) * 100}%`);
+          count++;
+          console.log(`${(count / total) * 100}%`);
         });
       promises.push(promise);
     }
@@ -95,8 +95,8 @@ class IPhotoExporter {
     );
     this.images = this.xml["Master Image List"];
     this.photosMetadata = {};
-    this.noMatchKeywords = ["old-iphoto", "à-trier"];
-    this.keywordsList = ["old-iphoto", "à-trier"];
+    this.noMatchKeywords = ["old-iphoto", "a-trier"];
+    this.keywordsList = ["old-iphoto", "a-trier"];
     this.getKeywords();
     fs.writeFileSync(`${this.output}/KEYWORD_LIST.txt`, uniqBy(this.keywordsList).sort((a, b) => a.localeCompare(b)).join(',\n'))
   }
