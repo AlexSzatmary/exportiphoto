@@ -3,9 +3,7 @@ import { hideBin } from "yargs/helpers";
 import plist from "plist";
 import fs from "fs";
 import path from "path";
-import groupBy from "lodash/groupBy.js";
-import chunk from "lodash/chunk.js";
-import escape from "escape-string-regexp";
+import { uniqBy } from "lodash";
 import { Piscina } from "piscina";
 import { fileURLToPath } from "url";
 
@@ -98,8 +96,9 @@ class IPhotoExporter {
     this.images = this.xml["Master Image List"];
     this.photosMetadata = {};
     this.noMatchKeywords = ["old-iphoto", "à-trier"];
-    this.keywordsList = ["old-iphoto"];
+    this.keywordsList = ["old-iphoto", "à-trier"];
     this.getKeywords();
+    fs.writeFileSync(`${this.output}/KEYWORD_LIST.txt`, uniqBy(this.keywordsList).join(',\n').sort((a, b) => a.localeCompare(b)))
   }
 }
 
@@ -107,7 +106,7 @@ async function main() {
   console.log("initializing");
   const exporter = new IPhotoExporter({ fp: argv.path, out: argv.out });
   console.log("initializing done");
-  await exporter.startExport();
+  //await exporter.startExport();
 }
 
 await main();

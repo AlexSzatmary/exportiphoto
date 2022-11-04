@@ -2,6 +2,7 @@ import chunk from "lodash/chunk.js";
 import path from "path";
 import fs from "fs";
 import { execSync } from 'child_process'
+import sharp from 'sharp'
 
 export default async function handleExport({
   dir,
@@ -13,7 +14,7 @@ export default async function handleExport({
   }
   const isPng = (/.png/gi).match(outPath.path)
   if (isPng) {
-    console.log('TODO')
+    sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
   } else {
     fs.renameSync(image.path, outPath)
   }
