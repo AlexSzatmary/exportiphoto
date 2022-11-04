@@ -7,7 +7,6 @@ export default async function handleExport({
   dir,
   image
 }) {
-  console.log(dir, image)
   let outPath = path.normalize(path.join(dir, path.basename(image.path)))
   if (fs.existsSync(outPath)) {
     outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
@@ -22,4 +21,5 @@ export default async function handleExport({
   for (keyword of image.keyword) {
     execSync(`exiftool -overwrite_original -keywords+="${keyword}"`)
   }
+  console.log(`done for ${outPath}`)
 }
