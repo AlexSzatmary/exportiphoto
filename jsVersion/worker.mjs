@@ -9,14 +9,19 @@ export default async function handleExport({
   image
 }) {
   let outPath = path.normalize(path.join(dir, path.basename(image.path)))
-  if (fs.existsSync(outPath)) {
-    outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
-  }
   const isPng = PNG_REGEX.test(outPath)
   if (isPng) {
-    sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath.replace(/\.png/g, '.jpg'))
-  } else {
-    fs.renameSync(image.path, outPath)
+    outPath = outPath.replace(/\.png/g, '.jpg')
+  }
+  if (fs.existsSync(image.path)) {
+    if (fs.existsSync(outPath)) {
+      outPath = path.normalize(outPath.replace(outPath.extname(), `-${image.id}${outPath.extname()}`))
+    }
+    if (isPng) {
+      sharp(image.path).toFormat('jpg', { palette: true }).toFile(outPath)
+    } else {
+      fs.renameSync(image.path, outPath)
+    }
   }
   execSync(`exiftool -overwrite_original -keywords= ${outPath}`)
   for (keyword of image.keyword) {
