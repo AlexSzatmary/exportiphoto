@@ -124,7 +124,7 @@ class iPhotoLibrary(object):
                         doc.expandNode(node)
                         self.faces = dict([
                             (k, v['name']) for k,v in
-                             self.dePlist(node, ['name']).items()
+                             list(self.dePlist(node, ['name']).items())
                         ])
                         stack.pop()
                     elif last_top_key == 'Major Version':
@@ -132,8 +132,7 @@ class iPhotoLibrary(object):
                         major_version = self.dePlist(node)
                         stack.pop()
                         if major_version != self.major_version:
-                            raise iPhotoLibraryError, \
-                            "Sorry, I can't understand version %i iPhoto Libraries." % major_version
+                            raise iPhotoLibraryError("Sorry, I can't understand version %i iPhoto Libraries." % major_version)
                     elif last_top_key == 'Minor Version':
                         doc.expandNode(node)
                         minor_version = self.dePlist(node)
@@ -180,16 +179,14 @@ class iPhotoLibrary(object):
             try:
                 return int(self.getText(node))
             except ValueError:
-                raise iPhotoLibraryError, \
-                "Corrupted Library; unexpected value '%s' for integer" % \
-                    self.getText(node)
+                raise iPhotoLibraryError("Corrupted Library; unexpected value '%s' for integer" % \
+                    self.getText(node))
         elif dtype == 'real':
             try:
                 return float(self.getText(node))
             except ValueError:
-                raise iPhotoLibraryError, \
-                "Corrupted Library; unexpected value '%s' for real" % \
-                    self.getText(node)
+                raise iPhotoLibraryError("Corrupted Library; unexpected value '%s' for real" % \
+                    self.getText(node))
         elif dtype == 'array':
             return [self.dePlist(c, ik) for c in node.childNodes \
                     if c.nodeType == Node.ELEMENT_NODE]
@@ -207,7 +204,7 @@ class iPhotoLibrary(object):
                         if last_key not in interesting_keys \
                           and not last_key.isdigit():
                             continue # nope.
-                    d[intern(str(last_key))] = self.dePlist(c, ik)
+                    d[sys.intern(str(last_key))] = self.dePlist(c, ik)
             return d
         elif dtype == 'true':
             return True
@@ -218,7 +215,7 @@ class iPhotoLibrary(object):
         elif dtype == 'date':
             return self.appleDate(self.getText(c))
         else:
-            raise Exception, "Don't know what a %s is." % dtype
+            raise Exception("Don't know what a %s is." % dtype)
 
     @staticmethod
     def getText(element, default=None):
@@ -263,7 +260,7 @@ class iPhotoLibrary(object):
             if self.import_albums:
                 for ia in self.import_albums:
                     for album_name in ia['album_names']:
-                        album_name = unicode(album_name, 'utf-8')
+                        album_name = str(album_name, 'utf-8')
                         if folderName == album_name:
                             self.import_albums.remove(ia)
 
@@ -333,15 +330,14 @@ end tell
         try:
             image = self.images[imageId]
         except KeyError:
-            raise iPhotoLibraryError, "Can't find image #%s" % imageId
+            raise iPhotoLibraryError("Can't find image #%s" % imageId)
 
         if not os.path.exists(folderName):
             try:
                 if not self.test:
                     os.makedirs(folderName)
-            except OSError, why:
-                raise iPhotoLibraryError, \
-                    "Can't create %s: %s" % (folderName, why[1])
+            except OSError as why:
+                raise iPhotoLibraryError("Can't create %s: %s" % (folderName, why[1]))
             self.status("  Created %s\n" % folderName)
 
         #Unedited images only have ImagePath, edited images have both ImagePath and OriginalPath,
@@ -410,7 +406,7 @@ end tell
         try:
             image = self.images[imageId]
         except KeyError:
-            raise iPhotoLibraryError, "Can't find image #%s" % imageId
+            raise iPhotoLibraryError("Can't find image #%s" % imageId)
 
         if not filePath:
             if self.originals:
@@ -432,7 +428,7 @@ end tell
         if self.use_faces:
             keywords.update([self.faces[f['face key']]
                              for f in image.get("Faces", [])
-                             if self.faces.has_key(f['face key'])]
+                             if f['face key'] in self.faces]
             )
 
         if caption or comment or rating or keywords:
@@ -450,9 +446,9 @@ end tell
                 if not self.test:
                     md.write(preserve_timestamps=True)
                 return True
-            except IOError, why:
+            except IOError as why:
                 self.status("\nProblem setting metadata (%s) on %s\n" % (
-                    unicode(why.__str__(), errors='replace'), filePath
+                    str(why.__str__(), errors='replace'), filePath
                 ))
         return False
 
@@ -460,8 +456,7 @@ end tell
         try:
             return datetime.utcfromtimestamp(self.apple_epoch + float(text))
         except (ValueError, TypeError):
-            raise iPhotoLibraryError, \
-            "Corrupted Library; unexpected value '%s' for date" % text
+            raise iPhotoLibraryError("Corrupted Library; unexpected value '%s' for date" % text)
 
     def status(self, msg, force=False):
         if force or not self.quiet:
@@ -637,13 +632,13 @@ if __name__ == '__main__':
                                 )
         def copyImage(imageId, folderName, folderDate):
             library.copyImage(imageId, folderName, folderDate)
-    except iPhotoLibraryError, why:
+    except iPhotoLibraryError as why:
         error(why[0])
     except KeyboardInterrupt:
         error("Interrupted.")
     try:
         library.walk([copyImage])
-    except iPhotoLibraryError, why:
+    except iPhotoLibraryError as why:
         error(why[0])
     except KeyboardInterrupt:
         error("Interrupted. Copy may be incomplete.")
