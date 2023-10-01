@@ -25,10 +25,15 @@ try:
 except ImportError:
     pyexiv2 = None
 
-# To allow Unicode characters to be displayed
-# (see http://wiki.python.org/moin/PrintFails)
-sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-sys.stderr = codecs.getwriter(locale.getpreferredencoding())(sys.stderr)
+# The following code caused things to break for me. I think it was needed on
+# Python 2.
+#
+# # To allow Unicode characters to be displayed
+# # (see http://wiki.python.org/moin/PrintFails)
+# sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
+# print('sys.stdout')
+# sys.stderr = codecs.getwriter(locale.getpreferredencoding())(sys.stderr)
+
 
 class iPhotoLibraryError(Exception):
     pass
@@ -40,7 +45,7 @@ class RemoveNullsStream(IOBase):
         self.file = open(filename, 'r')
 
     def read(self, bufsize=2**20):
-        return self.file.read(bufsize).translate(None,"\0")
+        return self.file.read(bufsize).translate({None: "\0"})
 
     def close(self):
         self.file.close()
