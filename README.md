@@ -26,6 +26,7 @@ I made the following changes:
 * Formatted and made pass flake8
 * Switched from pyexiv2 to exiftool (run through subprocess)
 * Changing which tags are written
+* Removed jsversion introduced by [Nathan Schwarz](https://github.com/nathanschwarz)
 
 In 2023, exporting iPhoto 8 albums is a niche application. It seems that for the past
 few years, each user picked up this package, modified it for their needs, and posted
