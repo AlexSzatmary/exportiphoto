@@ -14,16 +14,37 @@ Modifications by
 [Brian Morearty](http://github.com/BMorearty),
 [Mark Nottingham](http://github.com/mnot),
 [Duoglas Du](http://github.com/duoglas),
-[Avinash Meetoo](http://github.com/avinash), and
-[J.G. Field](http://gitub.com/jgfield)
+[Avinash Meetoo](http://github.com/avinash),
+[J.G. Field](http://gitub.com/jgfield),
+[Nathan Schwarz](https://github.com/nathanschwarz), and
+[Alex Szatmary](https://github.com/AlexSzatmary)
 
-iPhoto can do this now
+Notes by Alex Szatmary
 ----------------------
+I made the following changes:
+* Converted from Python 2 to 3
+* Formatted and made pass flake8
+* Switched from pyexiv2 to exiftool (run through subprocess)
+* Changing which tags are written
 
-Great news. If you upgrade to iPhoto 9.4.3 or later, [you can export
-dirctly out of iPhoto to a folder
-structure](https://discussions.apple.com/message/24759040#24759040). You don't need to use
-exportiphoto.
+In 2023, exporting iPhoto 8 albums is a niche application. It seems that for the past
+few years, each user picked up this package, modified it for their needs, and posted
+their progress on GitHub. My modifications were significant; although I did not
+knowingly break prior functionality, some features might not work now. If this program
+does not work for you, message me on GitHub and I'll see if I can fix it.
+
+Previous implementations depended on exiv2 and pyexiv2, which are not yet supported well
+on Apple Silicon (AKA ARM, M1, M2). I wanted something that would get files into modern
+Photos with minimal hassle on a modern Mac.
+
+Details on metadata are described in "Writing Metadata" below.
+
+iPhoto 9 can export photos
+--------------------------
+
+Great news. If you upgrade to iPhoto 9.4.3 or later, [you can export dirctly out of
+iPhoto to a folder structure](https://discussions.apple.com/message/24759040#24759040).
+You don't need to use exportiphoto.
 
 Here's how:
 
@@ -35,16 +56,6 @@ Here's how:
 3. Choose Subfolder Format: Event Name.
 
 ![Exporting folders out of iPhoto](iPhoto11exportbyevent.png)
-
-Installation
-------------
-
-Run Terminal and enter this command:
-
-    curl https://raw.github.com/BMorearty/exportiphoto/master/exportiphoto.py > exportiphoto.py
-
-This copies exportiphoto.py to your Home folder. Actually you can put it
-anywhere you want.
 
 Usage
 -----
@@ -88,10 +99,10 @@ Output
 By default, exportiphoto exports Events.  It can export Albums instead; use
 the -a option on the command line.
 
-It creates a separate folder on disk for each event.  Every folder is prefixed
-by the event date in this format: yyyy-mm-dd (because this format is sortable by name)
-unless you use the -d option.
-If the event has a name it is appended to the end of the folder name.
+It creates a separate folder on disk for each event.  Every folder is prefixed by the
+event date in this format: yyyy-mm-dd (because this format is sortable by name) unless
+you use the -d option. If the event has a name it is appended to the end of the folder
+name.
 
 Example
 -------
@@ -121,45 +132,11 @@ If you set the -d option to turn off the prepended date, the folder names will b
 Writing Metadata
 ----------------
 
-If pyexiv2 is installed, exportiphoto can write iPhoto metadata into
-images as they're exported, with the -m option. Currently, it writes:
+If [exiftool](https://exiftool.org/) is installed, exportiphoto can write iPhoto
+metadata into images as they're exported, with the -m option. Currently, it writes:
 
- - iPhoto image name to Iptc.Application2.Headline
- - iPhoto description to Iptc.Application2.Caption
- - iPhoto keywords to Iptc.Application2.Keywords
- - iPhoto rating to Xmp.xmp.Rating
-
-See below for information on installing pyexiv2.
-
-NOTE: if you see messages like this:
-
-    Error: Directory Canon with 1100 entries considered invalid; not read.
-
-you can safely ignore them; they indicate a problem reading the metadata
-already in the file. Installing a newer version of pyexiv2 should fix this
-(as of this writing, it's fixed in the repository, but not released).
-
-Installing pyexiv2
-------------------
-
-Unfortunately, there is no easy way to install pyexiv2, but if you have
-MacPorts <http://macports.org/>, it's relatively simple; follow these steps
-to set up:
-
-    sudo port install scons
-    sudo port install exiv2
-    sudo port install boost +python26
-
-Then, after downloading Pyexiv2 <http://tilloy.net/dev/pyexiv2/> and changing
-into its source directory:
-
-    export CXXFLAGS="-I/opt/local/include"
-    export LDFLAGS="-L/opt/local/lib -lpython2.6"
-    sudo scons install
-    cd /opt/local/Library/Frameworks/Python.framework/Versions/2.6/lib/python2.6/site-packages/
-    sudo mv libexiv2python.dylib libexiv2python.so
-
-Note that you'll have to use python2.6 to run the script; e.g.,
-
-    python2.6 exportiphoto ...
-
+ - iPhoto Title, to Title and ObjectName, read in Photos as Title
+ - iPhoto Caption, to MWG:Description, read in Photos as Caption
+ - iPhoto Comment, to UserComment, not used in Photos
+ - iPhoto Keywords, to MWG:Keywords, read in Photos as Keywords
+ - iPhoto Rating to XMP-xmp:Rating and to a [keyword from 1* to 5*****](https://discussions.apple.com/docs/DOC-8531)
