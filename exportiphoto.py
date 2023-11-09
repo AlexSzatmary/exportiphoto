@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-__version__ = "0.6"
+__version__ = "0.7"
 
 import base64
 
@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import stat
+import subprocess
 import sys
 
 # import time
@@ -19,20 +20,6 @@ from io import IOBase
 from optparse import OptionParser
 from xml.dom.pulldom import START_ELEMENT, END_ELEMENT, parse
 from xml.dom.minidom import Node
-
-try:
-    import pyexiv2
-except (ImportError, OSError):
-    pyexiv2 = None
-
-# The following code caused things to break for me. I think it was needed on
-# Python 2.
-#
-# # To allow Unicode characters to be displayed
-# # (see http://wiki.python.org/moin/PrintFails)
-# sys.stdout = codecs.getwriter(locale.getpreferredencoding())(sys.stdout)
-# print('sys.stdout')
-# sys.stderr = codecs.getwriter(locale.getpreferredencoding())(sys.stderr)
 
 
 class iPhotoLibraryError(Exception):
@@ -117,8 +104,10 @@ class iPhotoLibrary(object):
         "Keywords",
         "Caption",
         "Comment",
+        "Title",
         "Faces",
         "face key",
+        "MediaType",
     ]
     apple_epoch = 978307200
 
@@ -456,24 +445,14 @@ end tell
         except KeyError:
             raise iPhotoLibraryError("Can't find image #%s" % imageId)
 
-        # if not filePath:
-        #     if self.originals:
-        #         if "OriginalPath" in image:
-        #             mFilePath = image["OriginalPath"]
-        #         else:
-        #             mFilePath = image["ImagePath"]
-        #     else:
-        #         if "ImagePath" not in image:
-        #             mFilePath = image["OriginalPath"]
-        #         else:
-        #             mFilePath = image["ImagePath"]
-
         caption = image.get("Caption", None)
         rating = image.get("Rating", None)
         comment = image.get("Comment", None)
-        keywords = set([self.keywords[k] for k in image.get("Keywords", [])])
+        title = image.get("Title", None)
+        media_type = image.get("MediaType", None)
+        keywords = [self.keywords[k] for k in image.get("Keywords", [])]
         if self.use_faces:
-            keywords.update(
+            keywords.extend(
                 [
                     self.faces[f["face key"]]
                     for f in image.get("Faces", [])
@@ -481,25 +460,52 @@ end tell
                 ]
             )
 
-        if caption or comment or rating or keywords:
+        if media_type == "Movie":
+            pass
+        elif caption or comment or title or rating or keywords:
             try:
-                md = pyexiv2.ImageMetadata(filePath)
-                md.read()
+                if "HPIM2255" in filePath:
+                    print("!!!HORSE!!!")
+                    print(comment)
+                    print(caption)
+                    print(rating)
+                    print(keywords)
+                    rating = 5
+                cmd = ["exiftool", "-overwrite_original"]
                 if caption:
-                    md["Iptc.Application2.Headline"] = [caption]
-                if rating:
-                    md["Xmp.xmp.Rating"] = rating
+                    cmd.append(f"-MWG:Description={caption}")
                 if comment:
-                    md["Iptc.Application2.Caption"] = [comment]
+                    cmd.append(f"-UserComment={comment}")
+                    if comment == "Turkey":
+                        keywords.append("Turkey")
+                    else:
+                        print("Comment: ", comment, imageId)
+                if title:
+                    cmd.append(f"-Title={title}")
+                    cmd.append(f"-ObjectName={title}")
+                if rating is not None:
+                    cmd.append(f"-XMP-xmp:Rating={rating}")
+                    # Uses the rating system described here:
+                    # https://discussions.apple.com/docs/DOC-8531
+                    if rating == 0:
+                        pass
+                        # keywords.add('rejected')
+                    elif rating in range(1, 6):  # if rating is an integer from 1–5
+                        keywords.append(str(rating) + "*" * rating)
+                    else:
+                        keywords.append(f"rating={rating}")
                 if keywords:
-                    md["Iptc.Application2.Keywords"] = list(keywords)
+                    cmd.append(f"-MWG:Keywords={','.join(keywords)}")
+                cmd.append(filePath)
+                if "HPIM2255" in filePath:
+                    pass
                 if not self.test:
-                    md.write(preserve_timestamps=True)
+                    subprocess.Popen(cmd)
                 return True
             except IOError as why:
                 self.status(
                     "\nProblem setting metadata (%s) on %s\n"
-                    % (str(why.__str__(), errors="replace"), filePath)
+                    % (str(why.__str__()), filePath)
                 )
         return False
 
@@ -696,22 +702,21 @@ if __name__ == "__main__":
              Uses date in folder name.""",
     )
 
-    if pyexiv2:
-        option_parser.add_option(
-            "-m",
-            "--metadata",
-            action="store_true",
-            dest="metadata",
-            help="write metadata to images",
-        )
+    option_parser.add_option(
+        "-m",
+        "--metadata",
+        action="store_true",
+        dest="metadata",
+        help="write metadata to images",
+    )
 
-        option_parser.add_option(
-            "-f",
-            "--faces",
-            action="store_true",
-            dest="faces",
-            help="store faces as keywords (requires -m)",
-        )
+    option_parser.add_option(
+        "-f",
+        "--faces",
+        action="store_true",
+        dest="faces",
+        help="store faces as keywords (requires -m)",
+    )
 
     (options, args) = option_parser.parse_args()
 
